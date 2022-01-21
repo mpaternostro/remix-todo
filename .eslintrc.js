@@ -18,7 +18,13 @@ module.exports = {
 			],
 		},
 	],
-	extends: ["eslint:recommended", "prettier"],
+	extends: [
+		"eslint:recommended",
+		"plugin:react/recommended",
+		"plugin:react/jsx-runtime",
+		"plugin:react-hooks/recommended",
+		"prettier",
+	],
 	env: {
 		browser: true,
 		node: true,
