@@ -1,5 +1,12 @@
-import { ActionFunction, json, LinksFunction, useActionData } from "remix";
-import { useSearchParams } from "remix";
+import {
+	ActionFunction,
+	json,
+	LinksFunction,
+	redirect,
+	useActionData,
+	useSearchParams,
+} from "remix";
+import { login } from "~/utils/login.server";
 import stylesUrl from "../styles/login.css";
 
 export const links: LinksFunction = () => {
@@ -33,13 +40,18 @@ function validatePassword(password: string) {
 }
 
 const badRequest = (data: ActionData) => json(data, { status: 400 });
+const internalServerError = (data: ActionData) => json(data, { status: 500 });
 
 export const action: ActionFunction = async ({ request }) => {
 	const form = await request.formData();
 	const username = form.get("username");
 	const password = form.get("password");
 	const redirectTo = form.get("redirectTo") || "/todos";
-	if (typeof username !== "string" || typeof password !== "string") {
+	if (
+		typeof username !== "string" ||
+		typeof password !== "string" ||
+		typeof redirectTo !== "string"
+	) {
 		return badRequest({
 			formError: "Form not submitted correctly",
 		});
@@ -53,7 +65,6 @@ export const action: ActionFunction = async ({ request }) => {
 		username: validateUsername(username),
 		password: validatePassword(password),
 	};
-	console.log(Object.values(fieldErrors));
 	if (Object.values(fieldErrors).some(Boolean)) {
 		return badRequest({
 			formError: "Some fields are invalid",
@@ -62,10 +73,37 @@ export const action: ActionFunction = async ({ request }) => {
 		});
 	}
 
-	return badRequest({
-		formError: "Not implemented",
-		fields,
-	});
+	try {
+		const response = await login(fields);
+		if (!response.ok) {
+			return badRequest({
+				formError: "Username or password did not match",
+				fields,
+			});
+		}
+		const headers = new Headers();
+		const cookies = response.headers.get("Set-Cookie");
+		if (cookies) {
+			// header's get method returns a comma-separated list of values
+			// we can Array.split this because we know Authentication and
+			// Refresh cookies does not have any commas
+			const [authenticationCookie, refreshCookie] = cookies.split(",");
+			headers.append("Set-Cookie", authenticationCookie);
+			headers.append("Set-Cookie", refreshCookie);
+		}
+		return redirect(redirectTo, {
+			headers,
+		});
+	} catch (error) {
+		if (typeof error === "string") {
+			return internalServerError({
+				formError: error,
+			});
+		}
+		return internalServerError({
+			formError: "Something went wrong",
+		});
+	}
 };
 
 export default function Login() {
@@ -75,7 +113,6 @@ export default function Login() {
 	const formError = actionData?.formError;
 	const usernameError = actionData?.fieldErrors?.username;
 	const passwordError = actionData?.fieldErrors?.password;
-	console.log(actionData);
 
 	return (
 		<div className="container">
