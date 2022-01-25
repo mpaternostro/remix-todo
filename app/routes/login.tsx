@@ -7,6 +7,7 @@ import {
 	useSearchParams,
 } from "remix";
 import { login } from "~/utils/login.server";
+import { recreateHeaders } from "~/utils/recreateHeaders";
 import stylesUrl from "../styles/login.css";
 
 export const links: LinksFunction = () => {
@@ -75,22 +76,20 @@ export const action: ActionFunction = async ({ request }) => {
 
 	try {
 		const response = await login(fields);
-		if (!response.ok) {
-			return badRequest({
-				formError: "Username or password did not match",
-				fields,
-			});
+		const data = await response.json();
+		if ("statusCode" in data) {
+			// if there's statusCode in data then it's an error
+			return json(
+				{
+					formError: data.message,
+					fields,
+				},
+				{
+					status: data.statusCode,
+				},
+			);
 		}
-		const headers = new Headers();
-		const cookies = response.headers.get("Set-Cookie");
-		if (cookies) {
-			// header's get method returns a comma-separated list of values
-			// we can Array.split this because we know Authentication and
-			// Refresh cookies does not have any commas
-			const [authenticationCookie, refreshCookie] = cookies.split(",");
-			headers.append("Set-Cookie", authenticationCookie);
-			headers.append("Set-Cookie", refreshCookie);
-		}
+		const headers = recreateHeaders(response);
 		return redirect(redirectTo, {
 			headers,
 		});

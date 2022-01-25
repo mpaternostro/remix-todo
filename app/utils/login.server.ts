@@ -4,12 +4,15 @@ type LoginFields = {
 };
 
 interface ResponseWithData extends Response {
-	json: () => Promise<{
-		id: string;
-		username: string;
-		createdAt: string;
-		updatedAt: string;
-	}>;
+	json: () => Promise<
+		| {
+				id: string;
+				username: string;
+				createdAt: string;
+				updatedAt: string;
+		  }
+		| ResponseDataError
+	>;
 }
 
 export async function login(
