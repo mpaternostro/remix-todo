@@ -5,10 +5,8 @@ import {
 	LinksFunction,
 	redirect,
 	useActionData,
-	useSearchParams,
 } from "remix";
-import { login } from "~/utils/login.server";
-import { recreateHeaders } from "~/utils/recreateHeaders";
+import { register } from "~/utils/register.server";
 import stylesUrl from "../styles/login.css";
 
 export const links: LinksFunction = () => {
@@ -48,12 +46,7 @@ export const action: ActionFunction = async ({ request }) => {
 	const form = await request.formData();
 	const username = form.get("username");
 	const password = form.get("password");
-	const redirectTo = form.get("redirectTo") || "/todos";
-	if (
-		typeof username !== "string" ||
-		typeof password !== "string" ||
-		typeof redirectTo !== "string"
-	) {
+	if (typeof username !== "string" || typeof password !== "string") {
 		return badRequest({
 			formError: "Form not submitted correctly",
 		});
@@ -76,7 +69,7 @@ export const action: ActionFunction = async ({ request }) => {
 	}
 
 	try {
-		const response = await login(fields);
+		const response = await register(fields);
 		const data = await response.json();
 		if ("statusCode" in data) {
 			// if there's statusCode in data then it's an error
@@ -90,10 +83,7 @@ export const action: ActionFunction = async ({ request }) => {
 				},
 			);
 		}
-		const headers = recreateHeaders(response);
-		return redirect(redirectTo, {
-			headers,
-		});
+		return redirect("/login");
 	} catch (error) {
 		if (typeof error === "string") {
 			return internalServerError({
@@ -106,9 +96,8 @@ export const action: ActionFunction = async ({ request }) => {
 	}
 };
 
-export default function Login() {
+export default function Register() {
 	const actionData = useActionData<ActionData>();
-	const [searchParams] = useSearchParams();
 
 	const formError = actionData?.formError;
 	const usernameError = actionData?.fieldErrors?.username;
@@ -117,13 +106,8 @@ export default function Login() {
 	return (
 		<div className="container">
 			<div className="content" data-light="">
-				<h1>Login</h1>
+				<h1>Register</h1>
 				<form method="post" aria-describedby="form-error-message">
-					<input
-						type="hidden"
-						name="redirectTo"
-						value={searchParams.get("redirectTo") ?? undefined}
-					/>
 					<div>
 						<label htmlFor="username-input">Username</label>
 						<input
@@ -157,7 +141,7 @@ export default function Login() {
 					<p id="form-error-message" className="form-validation-error">
 						{formError || ""}
 					</p>
-					<Link to="/register">Don&apos;t have an account? Sign up</Link>
+					<Link to="/login">Already have an account? Sign in</Link>
 					<button type="submit" className="button">
 						Submit
 					</button>
