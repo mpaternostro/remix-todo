@@ -1,0 +1,8 @@
+query whoami {
+	whoAmI {
+		id
+		username
+		createdAt
+		updatedAt
+	}
+}

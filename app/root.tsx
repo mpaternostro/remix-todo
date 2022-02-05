@@ -9,10 +9,11 @@ import {
 	useCatch,
 	useLoaderData,
 } from "remix";
+import { GraphQLClient } from "graphql-request";
 import globalStylesUrl from "./styles/global.css";
 import globalMediumStylesUrl from "./styles/global-medium.css";
 import globalLargeStylesUrl from "./styles/global-large.css";
-import { gql, GraphQLClient } from "graphql-request";
+import { Whoami, WhoamiQuery } from "./generated/graphql";
 
 export const links: LinksFunction = () => {
 	return [
@@ -57,29 +58,6 @@ function Document({
 	);
 }
 
-// replace this with codegen
-interface QueryResult {
-	whoAmI: {
-		id: string;
-		username: string;
-		currentHashedRefreshToken: string;
-		createdAt: string;
-		updatedAt: string;
-	};
-}
-
-// replace this with codegen
-const whoami = gql`
-	query whoami {
-		whoAmI {
-			id
-			username
-			createdAt
-			updatedAt
-		}
-	}
-`;
-
 interface GraphQLError {
 	response: {
 		errors: {
@@ -102,7 +80,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 	try {
 		const headers = new Headers();
 		headers.append("Cookie", request.headers.get("cookie") || "");
-		const data = await client.request<QueryResult>(whoami, {}, headers);
+		const data = await client.request<WhoamiQuery>(Whoami, {}, headers);
 		if (isLoginPath && data.whoAmI) {
 			// you are logged in, so you are redirected to the app
 			return redirect("/todos");
@@ -129,10 +107,10 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export default function App() {
-	const data = useLoaderData<QueryResult | null>();
+	const data = useLoaderData<WhoamiQuery | null>();
 	return (
 		<Document>
-			{data ? (
+			{data?.whoAmI ? (
 				<nav>
 					<span>{`Hello ${data.whoAmI.username}`}</span>
 				</nav>

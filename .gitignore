@@ -4,3 +4,6 @@ node_modules
 /build
 /public/build
 .env
+
+# GraphQL Codegen generated files
+app/generated/graphql.ts
