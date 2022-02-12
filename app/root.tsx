@@ -9,11 +9,11 @@ import {
 	useCatch,
 	useLoaderData,
 } from "remix";
-import { GraphQLClient } from "graphql-request";
 import globalStylesUrl from "./styles/global.css";
 import globalMediumStylesUrl from "./styles/global-medium.css";
 import globalLargeStylesUrl from "./styles/global-large.css";
 import { Whoami, WhoamiQuery } from "./generated/graphql";
+import { getGraphQLClient } from "./utils/getGraphQLClient";
 
 export const links: LinksFunction = () => {
 	return [
@@ -76,11 +76,9 @@ export const loader: LoaderFunction = async ({ request }) => {
 	}
 	const url = new URL(request.url, process.env.SERVER_ENDPOINT);
 	const isLoginPath = url.pathname === "/login";
-	const client = new GraphQLClient(`${process.env.SERVER_ENDPOINT}/graphql`);
 	try {
-		const headers = new Headers();
-		headers.append("Cookie", request.headers.get("cookie") || "");
-		const data = await client.request<WhoamiQuery>(Whoami, {}, headers);
+		const client = getGraphQLClient(request);
+		const data = await client.request<WhoamiQuery>(Whoami, {});
 		if (isLoginPath && data.whoAmI) {
 			// you are logged in, so you are redirected to the app
 			return redirect("/todos");
@@ -107,7 +105,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export default function App() {
-	const data = useLoaderData<WhoamiQuery | null>();
+	const data = useLoaderData<WhoamiQuery>();
 	return (
 		<Document>
 			{data?.whoAmI ? (
