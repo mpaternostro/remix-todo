@@ -6,3 +6,13 @@ query whoami {
 		updatedAt
 	}
 }
+
+query getTodos {
+	todos {
+		id
+		title
+		isCompleted
+		createdAt
+		updatedAt
+	}
+}

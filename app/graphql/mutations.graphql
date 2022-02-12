@@ -1,0 +1,11 @@
+mutation createTodo($title: String!) {
+	createTodo(createTodoInput: { title: $title }) {
+		id
+	}
+}
+
+mutation removeTodo($id: ID!) {
+	removeTodo(id: $id) {
+		id
+	}
+}
