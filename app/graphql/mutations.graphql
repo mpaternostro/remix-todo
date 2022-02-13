@@ -9,3 +9,11 @@ mutation removeTodo($id: ID!) {
 		id
 	}
 }
+
+mutation updateTodo($updateTodoInput: UpdateTodoInput!) {
+	updateTodo(updateTodoInput: $updateTodoInput) {
+		id
+		title
+		isCompleted
+	}
+}

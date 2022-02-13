@@ -8,14 +8,19 @@
 	margin-bottom: 0.75rem;
 }
 
-.todos-list li form::before {
-	content: "";
-	display: inline-block;
+.circle {
+	display: block;
 	width: 1rem;
 	height: 1rem;
 	border-radius: 50%;
-	background-color: rgb(255, 255, 255);
+	border: 0;
+	background-color: white;
 	margin: auto 5px auto 0;
+}
+
+.circle-fill {
+	background-color: black;
+	border: 2px solid white;
 }
 
 .button-delete {

@@ -17,6 +17,9 @@ import {
 	RemoveTodo,
 	RemoveTodoMutation,
 	RemoveTodoMutationVariables,
+	UpdateTodo,
+	UpdateTodoMutation,
+	UpdateTodoMutationVariables,
 } from "~/generated/graphql";
 import { getGraphQLClient } from "~/utils/getGraphQLClient";
 import todosStylesUrl from "../styles/todos.css";
@@ -54,7 +57,30 @@ export const action: ActionFunction = async ({ request }) => {
 	const formData = await request.formData();
 	const _action = formData.get("_action");
 	const client = getGraphQLClient(request);
+	if (_action === "toggle-completed") {
+		const todoId = formData.get("id");
+		const isCompleted = formData.get("isCompleted");
+		if (
+			typeof todoId !== "string" ||
+			todoId === "" ||
+			typeof isCompleted !== "string"
+		) {
+			return badRequest({});
+		}
+		await client.request<UpdateTodoMutation, UpdateTodoMutationVariables>(
+			UpdateTodo,
+			{
+				updateTodoInput: {
+					id: todoId,
+					// toggle todo completion
+					isCompleted: isCompleted === "true" ? false : true,
+				},
+			},
+		);
+		return redirect(request.url);
+	}
 	if (_action === "delete") {
+		console.log("deleting...");
 		const todoId = formData.get("id");
 		if (typeof todoId !== "string" || todoId === "") {
 			return badRequest({});
@@ -119,35 +145,61 @@ export default function TodosIndexRoute() {
 			>
 				{loaderData?.todos.length > 0 ? (
 					<ul className="todos-list">
-						{loaderData.todos.map((todo) => (
-							<li key={todo?.id}>
-								<Form
-									style={{
-										display: "flex",
-										flexDirection: "row",
-										alignItems: "center",
-									}}
-									method="post"
-								>
-									<input name="id" value={todo?.id} type="hidden" />
-									<span
+						{loaderData.todos
+							.sort((a, b) => {
+								if (a === null || b === null) {
+									return 0;
+								}
+								const aCreatedAt = new Date(a.createdAt).getTime();
+								const bCreatedAt = new Date(b.createdAt).getTime();
+								return aCreatedAt - bCreatedAt;
+							})
+							.map((todo) => (
+								<li key={todo?.id}>
+									<div
 										style={{
-											flex: "1",
+											display: "flex",
+											flexDirection: "row",
+											alignItems: "center",
 										}}
 									>
-										{todo?.title}
-									</span>
-									<button
-										name="_action"
-										value="delete"
-										type="submit"
-										className="button button-delete"
-									>
-										Delete
-									</button>
-								</Form>
-							</li>
-						))}
+										<Form method="post">
+											<input name="id" value={todo?.id} type="hidden" />
+											<input
+												name="isCompleted"
+												value={todo?.isCompleted.toString()}
+												type="hidden"
+											/>
+											<button
+												name="_action"
+												value="toggle-completed"
+												type="submit"
+												className={
+													todo?.isCompleted ? "circle circle-fill" : "circle"
+												}
+											/>
+										</Form>
+										<span
+											style={{
+												flex: "1",
+											}}
+										>
+											{todo?.title}
+										</span>
+										<Form method="post">
+											<input name="id" value={todo?.id} type="hidden" />
+											<button
+												name="_action"
+												value="delete"
+												type="submit"
+												className="button button-delete"
+											>
+												Delete
+											</button>
+										</Form>
+									</div>
+								</li>
+							))}
 					</ul>
 				) : (
 					<p>No todos found</p>
