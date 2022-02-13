@@ -22,3 +22,7 @@ h5 {
 	font-size: 1.125rem;
 	line-height: 1.75rem;
 }
+
+.main-wrapper {
+	--width: 40vw;
+}

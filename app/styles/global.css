@@ -46,7 +46,7 @@ html {
 html,
 body {
 	padding: 0;
-	margin: 0;
+	margin: 0.5rem;
 	color: var(--color-foreground);
 	background-color: var(--color-background);
 }
@@ -63,6 +63,11 @@ body {
 	background-repeat: no-repeat;
 	min-height: 100vh;
 	min-height: calc(100vh - env(safe-area-inset-bottom));
+}
+
+nav {
+	display: flex;
+	justify-content: space-between;
 }
 
 a {
@@ -196,13 +201,6 @@ h6 {
 }
 
 /* forms */
-
-form {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-	width: 100%;
-}
 
 fieldset {
 	margin: 0;
@@ -338,6 +336,12 @@ label > [type="radio"] {
 
 ::placeholder {
 	color: hsl(0 0% 100% / 65%);
+}
+
+.main-wrapper {
+	--width: 90vw;
+	width: var(--width);
+	margin: 0 auto;
 }
 
 .form-validation-error {

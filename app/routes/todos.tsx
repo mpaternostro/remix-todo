@@ -2,6 +2,7 @@ import {
 	ActionFunction,
 	Form,
 	json,
+	LinksFunction,
 	LoaderFunction,
 	redirect,
 	useActionData,
@@ -18,6 +19,16 @@ import {
 	RemoveTodoMutationVariables,
 } from "~/generated/graphql";
 import { getGraphQLClient } from "~/utils/getGraphQLClient";
+import todosStylesUrl from "../styles/todos.css";
+
+export const links: LinksFunction = () => {
+	return [
+		{
+			rel: "stylesheet",
+			href: todosStylesUrl,
+		},
+	];
+};
 
 interface GraphQLError {
 	response: {
@@ -99,24 +110,40 @@ export default function TodosIndexRoute() {
 	const loaderData = useLoaderData<GetTodosQuery>();
 	const actionData = useActionData<ActionData>();
 	return (
-		<>
+		<div className="main-wrapper">
 			<h1>Todos</h1>
-			<main>
+			<main
+				style={{
+					marginTop: "1rem",
+				}}
+			>
 				{loaderData?.todos.length > 0 ? (
-					<ul>
+					<ul className="todos-list">
 						{loaderData.todos.map((todo) => (
 							<li key={todo?.id}>
 								<Form
 									style={{
 										display: "flex",
 										flexDirection: "row",
+										alignItems: "center",
 									}}
 									method="post"
 								>
 									<input name="id" value={todo?.id} type="hidden" />
-									<span>{todo?.title}</span>
-									<button name="_action" value="delete" type="submit">
-										⨉
+									<span
+										style={{
+											flex: "1",
+										}}
+									>
+										{todo?.title}
+									</span>
+									<button
+										name="_action"
+										value="delete"
+										type="submit"
+										className="button button-delete"
+									>
+										Delete
 									</button>
 								</Form>
 							</li>
@@ -141,16 +168,16 @@ export default function TodosIndexRoute() {
 							{actionData.fieldErrors.title}
 						</p>
 					) : null}
-					<button name="_action" value="create" type="submit">
+					<button
+						name="_action"
+						value="create"
+						type="submit"
+						className="button button-create"
+					>
 						Submit
 					</button>
 				</Form>
-				<Form action="/logout" method="post">
-					<button type="submit" className="button">
-						Logout
-					</button>
-				</Form>
 			</main>
-		</>
+		</div>
 	);
 }

@@ -1,4 +1,5 @@
 import {
+	Form,
 	Links,
 	LinksFunction,
 	LiveReload,
@@ -6,6 +7,7 @@ import {
 	Meta,
 	Outlet,
 	redirect,
+	Scripts,
 	useCatch,
 	useLoaderData,
 } from "remix";
@@ -111,8 +113,14 @@ export default function App() {
 			{data?.whoAmI ? (
 				<nav>
 					<span>{`Hello ${data.whoAmI.username}`}</span>
+					<Form action="/logout" method="post">
+						<button type="submit" className="button">
+							Logout
+						</button>
+					</Form>
 				</nav>
 			) : null}
+			<Scripts />
 			<Outlet />
 		</Document>
 	);
