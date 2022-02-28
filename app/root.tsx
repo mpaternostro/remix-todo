@@ -15,7 +15,8 @@ import globalStylesUrl from "./styles/global.css";
 import globalMediumStylesUrl from "./styles/global-medium.css";
 import globalLargeStylesUrl from "./styles/global-large.css";
 import { Whoami, WhoamiQuery } from "./generated/graphql";
-import { getGraphQLClient } from "./utils/getGraphQLClient";
+import { getGraphQLClient } from "./utils/getGraphQLClient.server";
+import { validateToken } from "./utils/validateToken.server";
 
 export const links: LinksFunction = () => {
 	return [
@@ -76,10 +77,20 @@ export const loader: LoaderFunction = async ({ request }) => {
 	if (typeof process.env.SERVER_ENDPOINT !== "string") {
 		throw new Error("SERVER_ENDPOINT must be set");
 	}
+
 	const url = new URL(request.url, process.env.SERVER_ENDPOINT);
 	const isLoginPath = url.pathname === "/login";
+	const cookies = request.headers.get("Cookie");
+	if (!cookies) {
+		if (isLoginPath) {
+			return null;
+		}
+		throw redirect("/login");
+	}
+	await validateToken(cookies);
+
 	try {
-		const client = getGraphQLClient(request);
+		const client = getGraphQLClient(cookies);
 		const data = await client.request<WhoamiQuery>(Whoami, {});
 		if (isLoginPath && data.whoAmI) {
 			// you are logged in, so you are redirected to the app

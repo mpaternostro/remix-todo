@@ -21,7 +21,8 @@ import {
 	UpdateTodoMutation,
 	UpdateTodoMutationVariables,
 } from "~/generated/graphql";
-import { getGraphQLClient } from "~/utils/getGraphQLClient";
+import { getGraphQLClient } from "~/utils/getGraphQLClient.server";
+import { validateToken } from "~/utils/validateToken.server";
 import todosStylesUrl from "../styles/todos.css";
 
 export const links: LinksFunction = () => {
@@ -54,9 +55,15 @@ interface ActionData {
 const badRequest = (data: ActionData) => json(data, { status: 400 });
 
 export const action: ActionFunction = async ({ request }) => {
+	const cookies = request.headers.get("Cookie");
+	if (!cookies) {
+		throw redirect("/login");
+	}
+	await validateToken(cookies);
+
 	const formData = await request.formData();
 	const _action = formData.get("_action");
-	const client = getGraphQLClient(request);
+	const client = getGraphQLClient(cookies);
 	if (_action === "toggle-completed") {
 		const todoId = formData.get("id");
 		const isCompleted = formData.get("isCompleted");
@@ -113,8 +120,14 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
+	const cookies = request.headers.get("Cookie");
+	if (!cookies) {
+		throw redirect("/login");
+	}
+	await validateToken(cookies);
+
 	try {
-		const client = getGraphQLClient(request);
+		const client = getGraphQLClient(cookies);
 		const data = await client.request<GetTodosQuery>(GetTodos, {});
 		return data;
 	} catch (error) {
