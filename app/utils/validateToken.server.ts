@@ -26,9 +26,10 @@ export async function validateToken(authCookies: string) {
 			throw redirect("/login");
 		}
 		const headers = recreateHeaders(response);
-		// redirect to set new cookies
-		throw redirect("/todos", {
-			headers,
-		});
+		return {
+			setCookieHeaders: headers,
+			newCookies: response.headers.get("set-cookie"),
+		};
 	}
+	return null;
 }

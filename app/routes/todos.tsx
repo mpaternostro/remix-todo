@@ -52,18 +52,24 @@ interface ActionData {
 	};
 }
 
-const badRequest = (data: ActionData) => json(data, { status: 400 });
+const badRequest = (data: ActionData, headers: Headers) =>
+	json(data, { status: 400, headers });
 
 export const action: ActionFunction = async ({ request }) => {
 	const cookies = request.headers.get("Cookie");
 	if (!cookies) {
 		throw redirect("/login");
 	}
-	await validateToken(cookies);
+	// if there's new cookies these should be set on this action's response
+	const newCookies = await validateToken(cookies);
+	let headers: Headers = new Headers();
+	if (newCookies) {
+		headers = newCookies.setCookieHeaders;
+	}
 
 	const formData = await request.formData();
 	const _action = formData.get("_action");
-	const client = getGraphQLClient(cookies);
+	const client = getGraphQLClient(newCookies?.newCookies || cookies);
 	if (_action === "toggle-completed") {
 		const todoId = formData.get("id");
 		const isCompleted = formData.get("isCompleted");
@@ -72,7 +78,7 @@ export const action: ActionFunction = async ({ request }) => {
 			todoId === "" ||
 			typeof isCompleted !== "string"
 		) {
-			return badRequest({});
+			return badRequest({}, headers);
 		}
 		await client.request<UpdateTodoMutation, UpdateTodoMutationVariables>(
 			UpdateTodo,
@@ -84,13 +90,14 @@ export const action: ActionFunction = async ({ request }) => {
 				},
 			},
 		);
-		return redirect(request.url);
+		return redirect(request.url, {
+			headers,
+		});
 	}
 	if (_action === "delete") {
-		console.log("deleting...");
 		const todoId = formData.get("id");
 		if (typeof todoId !== "string" || todoId === "") {
-			return badRequest({});
+			return badRequest({}, headers);
 		}
 		await client.request<RemoveTodoMutation, RemoveTodoMutationVariables>(
 			RemoveTodo,
@@ -98,16 +105,21 @@ export const action: ActionFunction = async ({ request }) => {
 				id: todoId,
 			},
 		);
-		return redirect(request.url);
+		return redirect(request.url, {
+			headers,
+		});
 	}
 	if (_action === "create") {
 		const title = formData.get("title");
 		if (typeof title !== "string" || title === "") {
-			return badRequest({
-				fieldErrors: {
-					title: "Title is required",
+			return badRequest(
+				{
+					fieldErrors: {
+						title: "Title is required",
+					},
 				},
-			});
+				headers,
+			);
 		}
 		await client.request<CreateTodoMutation, CreateTodoMutationVariables>(
 			CreateTodo,
@@ -115,7 +127,9 @@ export const action: ActionFunction = async ({ request }) => {
 				title,
 			},
 		);
-		return redirect(request.url);
+		return redirect(request.url, {
+			headers,
+		});
 	}
 };
 
@@ -124,15 +138,22 @@ export const loader: LoaderFunction = async ({ request }) => {
 	if (!cookies) {
 		throw redirect("/login");
 	}
-	await validateToken(cookies);
+	// if there's new cookies these should be set on this loader's response
+	const newCookies = await validateToken(cookies);
+	let headers: Headers = new Headers();
+	if (newCookies) {
+		headers = newCookies.setCookieHeaders;
+	}
 
+	const client = getGraphQLClient(newCookies?.newCookies || cookies);
 	try {
-		const client = getGraphQLClient(cookies);
 		const data = await client.request<GetTodosQuery>(GetTodos, {});
-		return data;
+		return json(data, {
+			headers,
+		});
 	} catch (error) {
 		if (typeof error === "string") {
-			throw new Response(error, { status: 500 });
+			throw new Response(error, { status: 500, headers });
 		} else if (typeof error === "object" && error !== null) {
 			if (isGraphQLError(error)) {
 				if (error.response.errors[0].message === "Unauthorized") {

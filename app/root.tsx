@@ -87,19 +87,34 @@ export const loader: LoaderFunction = async ({ request }) => {
 		}
 		throw redirect("/login");
 	}
-	await validateToken(cookies);
+	// if there's new cookies these should be set on this loader's response
+	const newCookies = await validateToken(cookies);
 
+	// INFO: I believe that using a middleware before getting graphql client might
+	// be a better idea because calling `validateToken`, passing new cookies to get
+	// graphql client and sending new headers on every loader and action's responses
+	// means I have to repeat code along all loaders and actions that need to know if
+	// user's token is valid before reaching the graphql server, but right now
+	// there's no such thing in remix.run
+
+	let headers: Headers = new Headers();
+	if (newCookies) {
+		headers = newCookies.setCookieHeaders;
+	}
+
+	const client = getGraphQLClient(newCookies?.newCookies || cookies);
 	try {
-		const client = getGraphQLClient(cookies);
 		const data = await client.request<WhoamiQuery>(Whoami, {});
 		if (isLoginPath && data.whoAmI) {
 			// you are logged in, so you are redirected to the app
-			return redirect("/todos");
+			return redirect("/todos", {
+				headers,
+			});
 		}
 		return data;
 	} catch (error) {
 		if (typeof error === "string") {
-			throw new Response(error, { status: 500 });
+			throw new Response(error, { status: 500, headers });
 		} else if (typeof error === "object" && error !== null) {
 			if (isGraphQLError(error)) {
 				if (error.response.errors[0].message === "Unauthorized") {
