@@ -167,11 +167,7 @@ export default function TodosIndexRoute() {
 	return (
 		<div className="main-wrapper">
 			<h1>Todos</h1>
-			<main
-				style={{
-					marginTop: "1rem",
-				}}
-			>
+			<main>
 				{loaderData?.todos.length > 0 ? (
 					<ul className="todos-list">
 						{loaderData.todos
@@ -185,13 +181,6 @@ export default function TodosIndexRoute() {
 							})
 							.map((todo) => (
 								<li key={todo?.id}>
-									<div
-										style={{
-											display: "flex",
-											flexDirection: "row",
-											alignItems: "center",
-										}}
-									>
 										<Form method="post">
 											<input name="id" value={todo?.id} type="hidden" />
 											<input
@@ -208,13 +197,23 @@ export default function TodosIndexRoute() {
 												}
 											/>
 										</Form>
-										<span
-											style={{
-												flex: "1",
-											}}
+									<Form method="post" className="update-form">
+										<input name="id" value={todo?.id} type="hidden" />
+										<input
+											type="text"
+											name="title"
+											defaultValue={todo?.title}
+											className="todo-title"
+										/>
+										<button
+											name="_action"
+											value="update-title"
+											type="submit"
+											className="button button-update"
 										>
-											{todo?.title}
-										</span>
+											Save
+										</button>
+									</Form>
 										<Form method="post">
 											<input name="id" value={todo?.id} type="hidden" />
 											<button
@@ -226,7 +225,6 @@ export default function TodosIndexRoute() {
 												Delete
 											</button>
 										</Form>
-									</div>
 								</li>
 							))}
 					</ul>
