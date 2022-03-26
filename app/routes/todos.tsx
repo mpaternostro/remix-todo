@@ -138,14 +138,9 @@ export const loader: LoaderFunction = async ({ request }) => {
 	if (!cookies) {
 		throw redirect("/login");
 	}
-	// if there's new cookies these should be set on this loader's response
-	const newCookies = await validateToken(cookies);
-	let headers: Headers = new Headers();
-	if (newCookies) {
-		headers = newCookies.setCookieHeaders;
-	}
 
-	const client = getGraphQLClient(newCookies?.newCookies || cookies);
+	const headers: Headers = new Headers();
+	const client = getGraphQLClient(cookies);
 	try {
 		const data = await client.request<GetTodosQuery>(GetTodos, {});
 		return json(data, {

@@ -1,5 +1,6 @@
 import {
 	Form,
+	json,
 	Links,
 	LinksFunction,
 	LiveReload,
@@ -111,7 +112,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 				headers,
 			});
 		}
-		return data;
+		return json<WhoamiQuery>(data);
 	} catch (error) {
 		if (typeof error === "string") {
 			throw new Response(error, { status: 500, headers });
