@@ -21,6 +21,7 @@ import {
 	UpdateTodoMutation,
 	UpdateTodoMutationVariables,
 } from "~/generated/graphql";
+import { TodoItem } from "~/lib/TodoItem";
 import { getGraphQLClient } from "~/utils/getGraphQLClient.server";
 import { validateToken } from "~/utils/validateToken.server";
 import todosStylesUrl from "../styles/todos.css";
@@ -87,6 +88,30 @@ export const action: ActionFunction = async ({ request }) => {
 					id: todoId,
 					// toggle todo completion
 					isCompleted: isCompleted === "true" ? false : true,
+				},
+			},
+		);
+		return redirect(request.url, {
+			headers,
+		});
+	}
+	if (_action === "update-title") {
+		const todoId = formData.get("id");
+		const title = formData.get("title");
+		if (
+			typeof todoId !== "string" ||
+			typeof title !== "string" ||
+			todoId === "" ||
+			title === ""
+		) {
+			return badRequest({}, headers);
+		}
+		await client.request<UpdateTodoMutation, UpdateTodoMutationVariables>(
+			UpdateTodo,
+			{
+				updateTodoInput: {
+					id: todoId,
+					title,
 				},
 			},
 		);
@@ -168,7 +193,7 @@ export default function TodosIndexRoute() {
 		<div className="main-wrapper">
 			<h1>Todos</h1>
 			<main>
-				{loaderData?.todos.length > 0 ? (
+				{loaderData.todos.length > 0 ? (
 					<ul className="todos-list">
 						{loaderData.todos
 							.sort((a, b) => {
@@ -180,52 +205,7 @@ export default function TodosIndexRoute() {
 								return aCreatedAt - bCreatedAt;
 							})
 							.map((todo) => (
-								<li key={todo?.id}>
-										<Form method="post">
-											<input name="id" value={todo?.id} type="hidden" />
-											<input
-												name="isCompleted"
-												value={todo?.isCompleted.toString()}
-												type="hidden"
-											/>
-											<button
-												name="_action"
-												value="toggle-completed"
-												type="submit"
-												className={
-													todo?.isCompleted ? "circle circle-fill" : "circle"
-												}
-											/>
-										</Form>
-									<Form method="post" className="update-form">
-										<input name="id" value={todo?.id} type="hidden" />
-										<input
-											type="text"
-											name="title"
-											defaultValue={todo?.title}
-											className="todo-title"
-										/>
-										<button
-											name="_action"
-											value="update-title"
-											type="submit"
-											className="button button-update"
-										>
-											Save
-										</button>
-									</Form>
-										<Form method="post">
-											<input name="id" value={todo?.id} type="hidden" />
-											<button
-												name="_action"
-												value="delete"
-												type="submit"
-												className="button button-delete"
-											>
-												Delete
-											</button>
-										</Form>
-								</li>
+								<TodoItem key={todo.id} todo={todo} />
 							))}
 					</ul>
 				) : (

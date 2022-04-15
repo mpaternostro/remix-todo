@@ -14,15 +14,15 @@ main {
 	align-items: center;
 }
 
+.todo-item:focus-within .button-update {
+	display: inline-flex;
+	align-items: center;
+}
+
 .update-form {
 	display: flex;
 	align-items: center;
 	flex: 1;
-}
-
-.update-form:focus-within .button-update {
-	display: inline-flex;
-	align-items: center;
 }
 
 .circle {
